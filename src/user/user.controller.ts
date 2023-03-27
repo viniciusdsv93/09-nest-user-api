@@ -16,7 +16,7 @@ export class UserController {
     }
 
     if (password !== passwordConfirmation) {
-      throw new BadRequestException("password and passwordConfirmation must match");
+      throw new BadRequestException("password and passwordConfirmation did not match");
     }
 
     try {
