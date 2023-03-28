@@ -8,7 +8,7 @@ export class UserController {
   constructor(private readonly userService: UserService) { }
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
+  async create(@Body() createUserDto: CreateUserDto) {
     const { password, passwordConfirmation } = createUserDto;
 
     if (password.length < 6) {
@@ -20,15 +20,21 @@ export class UserController {
     }
 
     try {
-      return this.userService.create(createUserDto);
+      return await this.userService.create(createUserDto);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
 
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  async findAll() {
+    const usersList = await this.userService.findAll();
+    return usersList.map(user => {
+      return {
+        ...user,
+        password: undefined
+      }
+    })
   }
 
   @Get(':id')

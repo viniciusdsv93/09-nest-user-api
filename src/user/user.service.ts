@@ -4,41 +4,45 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { v4 as uuid } from 'uuid';
 import { hash } from 'bcrypt';
-import { userInfo } from 'os';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class UserService {
   private usersList: User[] = [];
 
+  constructor(private readonly prismaService: PrismaService) { }
+
   async create(createUserDto: CreateUserDto) {
     const { email, password } = createUserDto;
 
-    const emailAlreadyInUse = this.usersList.find(user => user.email === email);
+    const emailAlreadyInUse = await this.prismaService.user.findUnique({
+      where: {
+        email
+      }
+    })
 
     if (emailAlreadyInUse) {
       throw new Error('email already in use');
     }
 
-    delete createUserDto.passwordConfirmation;
-
-    const hashedPassword = await hash(password, 10);
-
-    const newUser: User = {
-      ...createUserDto,
-      password: hashedPassword,
-      id: uuid()
+    const user: User = {
+      id: uuid(),
+      email,
+      password: await hash(password, 10)
     }
 
-    this.usersList.push(newUser);
+    const createdUser = await this.prismaService.user.create({
+      data: user
+    })
 
-    return "User successfully created";
+    return {
+      ...createdUser,
+      password: undefined
+    }
   }
 
-  findAll() {
-    return this.usersList.map(user => {
-      delete user.password;
-      return user;
-    });
+  async findAll() {
+    return await this.prismaService.user.findMany();
   }
 
   findOne(id: number) {
